@@ -27,7 +27,7 @@
 
 > [!IMPORTANT]
 > **代码重构说明**  
-> 当前项目包含**相当大量**的AI重构代码，可能存在大量屎山。  
+> 当前项目包含'**相当大量**'的AI重构代码，可能存在大量屎山。  
 > 功能实现集中在 `include/er6`，入口侧尽量保持薄封装。  
 
 ## 访问器
@@ -131,12 +131,6 @@ int main(int argc, char** argv)
 - `er6::AutoInit()` 会自动定位 Unity 进程并填充全局上下文 `g_ctx`。
 - `include/er6/unity6/init/*` 提供基于 `g_ctx + Mem()` 的薄封装，尽量减少手动传参。
 - 关键函数列表与最小必要参数汇总见：`docs/autoinit_functions.md`
-
----
-
-## Smoke Tests
-
-- `tools/smoke_test6/`：基于 AutoInit 的综合验证（MSID/GOM/Camera/W2S/Metadata）。
 
 ---
 
