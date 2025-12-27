@@ -36,17 +36,36 @@
 - **Windows 适配**：默认提供 WinAPI 实现（`ReadProcessMemory`）适配器。
 - **Header-only**：纯头文件库。
 
-## 特性
+## 功能概览
 
 | 功能 | 说明 |
 |:-----|:-----|
-| **进程/模块解析** | Windows 下枚举进程、查询模块基址与大小 |
-| **跨进程内存访问** | 通过 `IMemoryAccessor` 读取目标进程内存 |
-| **GameObject/组件读取** | 读取 GOM/MSID 相关结构并枚举对象 |
-| **Transform 世界坐标** | 读取层级并计算世界坐标 |
-| **相机 W2S** | 读取相机矩阵，世界坐标转屏幕坐标 |
-| **IL2CPP Metadata 扫描/导出** | 扫描并导出 `global-metadata.dat`，可输出 sidecar hint json |
-| **DumpSDK6 导出** | 导出 `dump.cs` 与 `generic.json` |
+| **AutoInit + 上下文管理** | 自动发现 Unity 进程、定位 UnityPlayer/GameAssembly、缓存关键 offset/全局槽，并暴露 `g_ctx + Mem()` 读写入口 |
+| **跨进程内存访问** | 以 `IMemoryAccessor` 为核心，提供 WinAPI 适配，所有算法都只依赖统一的读内存接口 |
+| **GOM 扫描与遍历** | 盲扫 GameObjectManager、校验桶结构、枚举 GameObject/组件，支持按 tag/名称/组件类型快速搜索 |
+| **MSID 全局注册表** | 枚举 `UnityEngine.Object` 实例，筛选 GameObject/ScriptableObject，读取名称、InstanceID、托管类型等信息 |
+| **Transform / Camera / W2S** | 解析 Transform 层级得到世界坐标；读取相机视图投影矩阵并完成世界坐标到屏幕坐标转换 |
+| **IL2CPP Metadata + Hint 导出** | 自动扫描 metadata header、导出 `global-metadata.dat`，并可生成包含注册信息的 hint json |
+| **DumpSDK6 工具链** | 结合 metadata/hint 结果生成 C# API 描述与泛型结构信息，辅助离线分析/SDK 导出 |
+| **模块化 Header-only 设计** | `er6/unity6/*` 下分门别类的子模块（gom/msid/object/camera/transform/metadata 等），可按需引用 |
+
+---
+
+## 核心 API 列表
+
+| 模块 | 代表 API | 说明 |
+|:----|:---------|:-----|
+| **上下文 / AutoInit** | `AutoInit()` / `ResetContext()` / `IsInited()` | 自动发现 Unity 进程、刷新 `g_ctx`，并提供重置与状态查询 |
+|  | `ReadPtr(addr)` / `ReadValue<T>(addr)` | 基于 `g_ctx + Mem()` 的统一读内存封装（支持返回值与 out 版本） |
+| **GOM** | `GomManager()` / `GomBucketsPtr()` / `FindGameObjectThroughTag(tag)` | 访问 GameObjectManager、遍历桶并按 tag 搜索 |
+|  | `EnumerateGameObjects()` / `GetComponentThroughTypeId(go, typeId)` | 列举 GameObject，或按组件 typeId/typeName 精确取组件 |
+| **MSID** | `MsIdSetPtr()` / `MsIdEntriesBase()` / `MsIdCount()` | 读取 ms_id_to_pointer set 元数据 |
+|  | `EnumerateMsIdToPointerObjects(opt)` / `FindObjectsOfTypeAll(ns, name)` | 枚举或按命名空间+类型名查找 `UnityEngine.Object` 实例 |
+| **对象/名称** | `ReadGameObjectName(nativeGo)` / `ReadScriptableObjectName(nativeSo)` | 读取常见 Native/Managed 对象名称 |
+| **Transform / Camera / W2S** | `GetTransformWorldPosition(transformPtr, maxDepth)` | 解析层级状态，输出世界坐标 |
+|  | `FindMainCamera()` / `GetCameraMatrix(nativeCamera)` / `W2S(viewProj, screen, world)` | 找主相机、读取视图投影矩阵并执行世界转屏幕 |
+| **Metadata / Hint** | `ExportGameAssemblyMetadataByScore()` / `ExportGameAssemblyMetadataHintJsonTScoreToSidecar(path)` | 一次性导出 metadata bytes 与 hint json |
+| **DumpSDK6** | `DumpSdk6DumpByPid(pid, paths)` | 组合 metadata/hint 结果，生成 C# API 与泛型结构描述 |
 
 ---
 
