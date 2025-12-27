@@ -4,7 +4,7 @@
 
 **Unity6 运行时内存结构算法还原库（er6 / header-only）**
 
-*跨进程读取 | Header-Only | IL2CPP*
+*跨进程读取 | Header-Only | IL2CPP/MONO*
 
 ![C++](https://img.shields.io/badge/C%2B%2B-17-blue?style=flat-square)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20x64-lightgrey?style=flat-square)
@@ -65,7 +65,7 @@
 | **Transform / Camera / W2S** | `GetTransformWorldPosition(transformPtr, maxDepth)` | 解析层级状态，输出世界坐标 |
 |  | `FindMainCamera()` / `GetCameraMatrix(nativeCamera)` / `W2S(viewProj, screen, world)` | 找主相机、读取视图投影矩阵并执行世界转屏幕 |
 | **Metadata / Hint** | `ExportGameAssemblyMetadataByScore()` / `ExportGameAssemblyMetadataHintJsonTScoreToSidecar(path)` | 一次性导出 metadata bytes 与 hint json |
-| **DumpSDK6** | `DumpSdk6DumpByPid(pid, paths)` | 组合 metadata/hint 结果，生成 C# API 与泛型结构描述 |
+| **DumpSDK6** | `DumpSdk6Dump(paths)` / `DumpSdk6DumpByPid(pid, paths)` | 组合 metadata/hint 结果，生成 C# API 与泛型结构描述（推荐 AutoInit 后使用无 pid 版本） |
 
 ---
 

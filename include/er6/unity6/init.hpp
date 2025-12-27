@@ -1,5 +1,4 @@
- 
-#pragma once
+ #pragma once
 
 #include "init/context.hpp"
 #include "init/gom.hpp"
@@ -10,3 +9,4 @@
 #include "init/object.hpp"
 #include "init/msid.hpp"
 #include "init/metadata.hpp"
+#include "init/dumpsdk.hpp"
