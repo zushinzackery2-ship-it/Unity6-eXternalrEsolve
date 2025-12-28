@@ -1,6 +1,6 @@
 <div align="center">
 
-# ExternalResolve6
+# eXternalrEsolve6
 
 **Unity6 运行时内存结构算法还原库（er6 / header-only）**
 
@@ -158,3 +158,4 @@ int main(int argc, char** argv)
 **Platform:** Windows x64
 
 </div>
+
