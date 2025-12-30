@@ -37,4 +37,4 @@ NDC: [-1,1] x [-1,1]
 
 ## 相机 0xF0 偏移矩阵
 
-组合后的 View * Projection 矩阵 (列主序)。
+组合后的 View * Projection 矩阵。

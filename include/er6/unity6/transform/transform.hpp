@@ -1,8 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <unordered_set>
-
 #include <immintrin.h>
 
 #include "glm/glm.hpp"
@@ -73,6 +71,44 @@ inline bool ReadTransformHierarchyState(
     return true;
 }
 
+// SIMD quaternion rotation: v' = v + 2*w*t + 2*cross(q, t), where t = cross(q, v)
+inline __m128 QuatRotateSIMD(__m128 q, __m128 v)
+{
+    // q = [qx, qy, qz, qw]
+    // v = [vx, vy, vz, 0]
+    
+    // q_yzx = [qy, qz, qx, qw]
+    // q_zxy = [qz, qx, qy, qw]
+    const __m128 q_yzx = _mm_shuffle_ps(q, q, _MM_SHUFFLE(3, 0, 2, 1));
+    const __m128 q_zxy = _mm_shuffle_ps(q, q, _MM_SHUFFLE(3, 1, 0, 2));
+    
+    // v_yzx = [vy, vz, vx, 0]
+    // v_zxy = [vz, vx, vy, 0]
+    const __m128 v_yzx = _mm_shuffle_ps(v, v, _MM_SHUFFLE(3, 0, 2, 1));
+    const __m128 v_zxy = _mm_shuffle_ps(v, v, _MM_SHUFFLE(3, 1, 0, 2));
+    
+    // t = cross(q.xyz, v) = q_yzx * v_zxy - q_zxy * v_yzx
+    const __m128 t = _mm_sub_ps(_mm_mul_ps(q_yzx, v_zxy), _mm_mul_ps(q_zxy, v_yzx));
+    
+    // t_yzx, t_zxy for cross(q, t)
+    const __m128 t_yzx = _mm_shuffle_ps(t, t, _MM_SHUFFLE(3, 0, 2, 1));
+    const __m128 t_zxy = _mm_shuffle_ps(t, t, _MM_SHUFFLE(3, 1, 0, 2));
+    
+    // cross_qt = cross(q.xyz, t) = q_yzx * t_zxy - q_zxy * t_yzx
+    const __m128 cross_qt = _mm_sub_ps(_mm_mul_ps(q_yzx, t_zxy), _mm_mul_ps(q_zxy, t_yzx));
+    
+    // w = qw broadcast to all lanes
+    const __m128 w = _mm_shuffle_ps(q, q, _MM_SHUFFLE(3, 3, 3, 3));
+    
+    // result = v + 2 * (w * t + cross_qt)
+    const __m128 two = _mm_set1_ps(2.0f);
+    const __m128 wt = _mm_mul_ps(w, t);
+    const __m128 inner = _mm_add_ps(wt, cross_qt);
+    const __m128 result = _mm_add_ps(v, _mm_mul_ps(two, inner));
+    
+    return result;
+}
+
 inline bool ComputeWorldPositionFromHierarchy(
     const IMemoryAccessor& mem,
     const TransformOffsets& off,
@@ -88,11 +124,7 @@ inline bool ComputeWorldPositionFromHierarchy(
         return false;
     }
 
-    if (maxDepth == 0)
-    {
-        return false;
-    }
-
+    // Read self node data (48 bytes: pos[3], pad, quat[4], scale[3], pad)
     float selfNode[12] = {};
     const std::uintptr_t selfAddr = state.nodeData + static_cast<std::uintptr_t>(index) * static_cast<std::uintptr_t>(off.node_stride);
     if (!mem.Read(selfAddr, selfNode, sizeof(selfNode)))
@@ -100,8 +132,10 @@ inline bool ComputeWorldPositionFromHierarchy(
         return false;
     }
 
+    // Accumulated position starts from self local position
     __m128 acc = _mm_loadu_ps(selfNode);
 
+    // Read parent index
     int parent = 0;
     const std::uintptr_t parentAddr0 = state.parentIndices + static_cast<std::uintptr_t>(index) * sizeof(std::int32_t);
     if (!mem.Read(parentAddr0, &parent, sizeof(parent)))
@@ -110,20 +144,9 @@ inline bool ComputeWorldPositionFromHierarchy(
     }
 
     int depth = 0;
-    std::unordered_set<std::int32_t> visited;
-    while (parent >= 0)
+    while (parent >= 0 && depth < maxDepth)
     {
-        if (maxDepth > 0 && depth >= maxDepth)
-        {
-            return false;
-        }
-
-        if (visited.find(parent) != visited.end())
-        {
-            return false;
-        }
-        visited.insert(parent);
-
+        // Read parent node data
         float node[12] = {};
         const std::uintptr_t nodeAddr = state.nodeData + static_cast<std::uintptr_t>(parent) * static_cast<std::uintptr_t>(off.node_stride);
         if (!mem.Read(nodeAddr, node, sizeof(node)))
@@ -131,52 +154,27 @@ inline bool ComputeWorldPositionFromHierarchy(
             return false;
         }
 
-        const __m128 t = _mm_loadu_ps(node + 0);
-        const __m128 qv = _mm_loadu_ps(node + 4);
-        const __m128 m = _mm_loadu_ps(node + 8);
+        const __m128 t = _mm_loadu_ps(node + 0);      // translation
+        const __m128 q = _mm_loadu_ps(node + 4);      // quaternion (x, y, z, w)
+        const __m128 s = _mm_loadu_ps(node + 8);      // scale
 
-        const __m128 v14 = _mm_mul_ps(m, acc);
+        // Transform: acc = t + rotate(q, acc * s)
+        const __m128 scaled = _mm_mul_ps(acc, s);
+        const __m128 rotated = QuatRotateSIMD(q, scaled);
+        acc = _mm_add_ps(t, rotated);
 
-        const __m128i qvi = _mm_castps_si128(qv);
-        const __m128 v15 = _mm_castsi128_ps(_mm_shuffle_epi32(qvi, 219));
-        const __m128 v16 = _mm_castsi128_ps(_mm_shuffle_epi32(qvi, 113));
-        const __m128 v17 = _mm_castsi128_ps(_mm_shuffle_epi32(qvi, 142));
-
-        const __m128i v14i = _mm_castps_si128(v14);
-        const __m128 v14_x = _mm_castsi128_ps(_mm_shuffle_epi32(v14i, 0));
-        const __m128 v14_y = _mm_castsi128_ps(_mm_shuffle_epi32(v14i, 85));
-        const __m128 v14_z = _mm_castsi128_ps(_mm_shuffle_epi32(v14i, 170));
-
-        const __m128 two = _mm_set1_ps(2.0f);
-
-        const __m128 q1 = _mm_castsi128_ps(_mm_shuffle_epi32(qvi, 85));
-        const __m128 q2 = _mm_castsi128_ps(_mm_shuffle_epi32(qvi, 170));
-        const __m128 q0 = _mm_castsi128_ps(_mm_shuffle_epi32(qvi, 0));
-
-        const __m128 part0 = _mm_mul_ps(
-            _mm_sub_ps(_mm_mul_ps(_mm_mul_ps(q1, two), v16), _mm_mul_ps(_mm_mul_ps(q2, two), v17)),
-            v14_x);
-
-        const __m128 part1 = _mm_mul_ps(
-            _mm_sub_ps(_mm_mul_ps(_mm_mul_ps(q2, two), v15), _mm_mul_ps(_mm_mul_ps(q0, two), v16)),
-            v14_y);
-
-        const __m128 part2 = _mm_mul_ps(
-            _mm_sub_ps(_mm_mul_ps(_mm_mul_ps(q0, two), v17), _mm_mul_ps(_mm_mul_ps(q1, two), v15)),
-            v14_z);
-
-        acc = _mm_add_ps(_mm_add_ps(_mm_add_ps(part0, v14), _mm_add_ps(part1, part2)), t);
-
+        // Read next parent
         const std::uintptr_t parentAddr = state.parentIndices + static_cast<std::uintptr_t>(parent) * sizeof(std::int32_t);
         if (!mem.Read(parentAddr, &parent, sizeof(parent)))
         {
             return false;
         }
-
+        
         ++depth;
     }
 
-    float tmp[4] = {};
+    // Extract result
+    float tmp[4];
     _mm_storeu_ps(tmp, acc);
     outPos.x = tmp[0];
     outPos.y = tmp[1];
@@ -189,7 +187,7 @@ inline bool GetTransformWorldPosition(
     const TransformOffsets& off,
     std::uintptr_t transformAddress,
     glm::vec3& outPos,
-    int maxDepth)
+    int maxDepth = 50)
 {
     TransformHierarchyState state;
     std::int32_t index = 0;

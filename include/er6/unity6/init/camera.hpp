@@ -40,7 +40,12 @@ inline std::uintptr_t FindMainCamera()
         return 0;
     }
 
-    return er6::GetComponentThroughTypeName(mainGo, "Camera");
+    const std::uintptr_t nativeCam = er6::GetCameraComponent(mainGo);
+    if (!nativeCam)
+    {
+        return 0;
+    }
+    return nativeCam;
 }
 
 inline bool GetCameraMatrix(std::uintptr_t nativeCamera, glm::mat4& outViewProj)

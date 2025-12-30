@@ -28,6 +28,59 @@ inline std::uintptr_t GetComponentThroughTypeName(std::uintptr_t gameObjectNativ
     return er6::GetComponentThroughTypeName(g_ctx.runtime, Mem(), g_ctx.off, g_ctx.gomOff, gameObjectNative, std::string(typeName));
 }
 
+inline std::uintptr_t GetComponentThroughNamespaceTypeName(std::uintptr_t gameObjectNative, const char* namespaze, const char* typeName)
+{
+    if (!IsInited() || !gameObjectNative || !namespaze || !namespaze[0] || !typeName || !typeName[0])
+    {
+        return 0;
+    }
+
+    std::uintptr_t pool = 0;
+    if (!er6::GetComponentPool(Mem(), gameObjectNative, g_ctx.gomOff, pool) || !pool)
+    {
+        return 0;
+    }
+
+    std::int32_t count = 0;
+    if (!er6::GetComponentCount(Mem(), gameObjectNative, g_ctx.gomOff, count) || count <= 0)
+    {
+        return 0;
+    }
+
+    if (count > 1024)
+    {
+        count = 1024;
+    }
+
+    for (std::int32_t i = 0; i < count; ++i)
+    {
+        std::uintptr_t nativeComp = 0;
+        if (!er6::GetComponentSlotNative(Mem(), pool, g_ctx.gomOff, i, nativeComp) || !nativeComp)
+        {
+            continue;
+        }
+
+        std::uintptr_t managedComp = 0;
+        if (!er6::GetNativeComponentManaged(Mem(), nativeComp, g_ctx.gomOff, managedComp) || !managedComp)
+        {
+            continue;
+        }
+
+        TypeInfo info;
+        if (!er6::ReadManagedObjectTypeInfo(Mem(), managedComp, g_ctx.off, info))
+        {
+            continue;
+        }
+
+        if (info.namespaze == namespaze && info.name == typeName)
+        {
+            return nativeComp;
+        }
+    }
+
+    return 0;
+}
+
 inline std::uintptr_t GetTransformComponent(std::uintptr_t gameObjectNative)
 {
     if (!IsInited() || !gameObjectNative)
@@ -95,6 +148,71 @@ inline std::uintptr_t GetTransformComponent(std::uintptr_t gameObjectNative)
     }
 
     return er6::GetComponentThroughTypeId(Mem(), g_ctx.gomOff, gameObjectNative, s_transformTypeId);
+}
+
+inline std::uintptr_t GetCameraComponent(std::uintptr_t gameObjectNative)
+{
+    if (!IsInited() || !gameObjectNative)
+    {
+        return 0;
+    }
+
+    static std::int32_t s_cameraTypeId = 0;
+    if (s_cameraTypeId == 0)
+    {
+        std::uintptr_t pool = 0;
+        if (er6::GetComponentPool(Mem(), gameObjectNative, g_ctx.gomOff, pool) && pool)
+        {
+            std::int32_t count = 0;
+            if (er6::GetComponentCount(Mem(), gameObjectNative, g_ctx.gomOff, count) && count > 0)
+            {
+                if (count > 1024)
+                {
+                    count = 1024;
+                }
+
+                for (std::int32_t i = 0; i < count; ++i)
+                {
+                    std::int32_t typeId = 0;
+                    if (!er6::GetComponentSlotTypeId(Mem(), pool, g_ctx.gomOff, i, typeId) || typeId == 0)
+                    {
+                        continue;
+                    }
+
+                    std::uintptr_t nativeComp = 0;
+                    if (!er6::GetComponentSlotNative(Mem(), pool, g_ctx.gomOff, i, nativeComp) || !nativeComp)
+                    {
+                        continue;
+                    }
+
+                    std::uintptr_t managedComp = 0;
+                    if (!er6::GetNativeComponentManaged(Mem(), nativeComp, g_ctx.gomOff, managedComp) || !managedComp)
+                    {
+                        continue;
+                    }
+
+                    TypeInfo ti;
+                    if (!er6::ReadManagedObjectTypeInfo(Mem(), managedComp, g_ctx.off, ti))
+                    {
+                        continue;
+                    }
+
+                    if (ti.namespaze == "UnityEngine" && ti.name == "Camera")
+                    {
+                        s_cameraTypeId = typeId;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    if (s_cameraTypeId == 0)
+    {
+        return 0;
+    }
+
+    return er6::GetComponentThroughTypeId(Mem(), g_ctx.gomOff, gameObjectNative, s_cameraTypeId);
 }
 
 } // namespace er6

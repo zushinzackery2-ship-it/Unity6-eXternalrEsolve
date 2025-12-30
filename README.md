@@ -1,6 +1,6 @@
 <div align="center">
 
-# eXternalrEsolve6
+# ExternalResolve6
 
 **Unity6 运行时内存结构算法还原库（er6 / header-only）**
 
@@ -45,6 +45,7 @@
 | **GOM 扫描与遍历** | 盲扫 GameObjectManager、校验桶结构、枚举 GameObject/组件，支持按 tag/名称/组件类型快速搜索 |
 | **MSID 全局注册表** | 枚举 `UnityEngine.Object` 实例，筛选 GameObject/ScriptableObject，读取名称、InstanceID、托管类型等信息 |
 | **Transform / Camera / W2S** | 解析 Transform 层级得到世界坐标；读取相机视图投影矩阵并完成世界坐标到屏幕坐标转换 |
+| **Bones** | 遍历 Transform 子树获取骨骼索引、名称与世界坐标 |
 | **IL2CPP Metadata + Hint 导出** | 自动扫描 metadata header、导出 `global-metadata.dat`，并可生成包含注册信息的 hint json |
 | **DumpSDK6 工具链** | 结合 metadata/hint 结果生成 C# API 描述与泛型结构信息，辅助离线分析/SDK 导出 |
 | **模块化 Header-only 设计** | `er6/unity6/*` 下分门别类的子模块（gom/msid/object/camera/transform/metadata 等），可按需引用 |
@@ -64,6 +65,7 @@
 | **对象/名称** | `ReadGameObjectName(nativeGo)` / `ReadScriptableObjectName(nativeSo)` | 读取常见 Native/Managed 对象名称 |
 | **Transform / Camera / W2S** | `GetTransformWorldPosition(transformPtr, maxDepth)` | 解析层级状态，输出世界坐标 |
 |  | `FindMainCamera()` / `GetCameraMatrix(nativeCamera)` / `W2S(viewProj, screen, world)` | 找主相机、读取视图投影矩阵并执行世界转屏幕 |
+| **Bones** | `GetBoneTransformAll(rootGo)` / `GetTransformWorldPosition(transform)` | 遍历 Transform 子树获取骨骼信息与世界坐标 |
 | **Metadata / Hint** | `ExportGameAssemblyMetadataByScore()` / `ExportGameAssemblyMetadataHintJsonTScoreToSidecar(path)` | 一次性导出 metadata bytes 与 hint json |
 | **DumpSDK6** | `DumpSdk6Dump(paths)` / `DumpSdk6DumpByPid(pid, paths)` | 组合 metadata/hint 结果，生成 C# API 与泛型结构描述（推荐 AutoInit 后使用无 pid 版本） |
 
@@ -75,7 +77,7 @@
 - **编译器**：MSVC（Visual Studio 2022）
 - **平台**：Windows x64
 - **链接方式**：静态运行时（/MT）
-- **第三方库**：需自行下载并在项目中添加 **glm**
+- **第三方库**：仓库已包含 `glm/`（工具侧编译 bat 已默认添加 include）
 
 ---
 
@@ -84,27 +86,28 @@
 
 ```
 ExternalResolve6/
-├── Resolve6.hpp
+├── Resolve6.hpp                # 统一入口头文件
 ├── include/
 │   └── er6/
-│       ├── core/
-│       ├── mem/
-│       ├── os/
-│       │   └── win/
+│       ├── core/               # 基础类型定义
+│       ├── mem/                # 内存访问抽象
+│       ├── os/win/             # Windows 平台实现
 │       └── unity6/
-│           ├── camera/
-│           ├── core/
-│           ├── dumpsdk/
-│           ├── gom/
-│           ├── init/
-│           ├── metadata/
-│           ├── msid/
-│           ├── object/
-│           ├── transform/
-│           └── util/
-└── Analysis/
-    ├── Algorithms/
-    └── Structures/
+│           ├── camera/         # 相机与 W2S
+│           ├── core/           # 偏移定义
+│           ├── dumpsdk/        # SDK 导出
+│           ├── gom/            # GameObjectManager
+│           ├── init/           # AutoInit 封装层
+│           ├── metadata/       # IL2CPP 元数据
+│           ├── msid/           # InstanceID 映射
+│           ├── object/         # Native/Managed 对象
+│           ├── transform/      # Transform 世界坐标
+│           └── util/           # 工具函数
+├── Analysis/
+│   ├── Algorithms/             # 算法说明文档 (18 篇)
+│   └── Structures/             # 结构说明文档 (24 篇)
+├── tools/                      # 示例工具
+└── docs/                       # 补充文档
 ```
 
 </details>
@@ -116,26 +119,38 @@ ExternalResolve6/
 ```cpp
 #include "Resolve6.hpp"
 
-int main(int argc, char** argv)
+int main()
 {
-    (void)argc;
-    (void)argv;
-
+    // 自动发现 Unity 进程并初始化上下文
     if (!er6::AutoInit())
     {
         return 1;
     }
 
+    // 查找主相机
     const std::uintptr_t cam = er6::FindMainCamera();
     if (!cam)
     {
         return 1;
     }
 
+    // 获取相机矩阵
     const auto viewProjOpt = er6::GetCameraMatrix(cam);
     if (!viewProjOpt.has_value())
     {
         return 1;
+    }
+
+    // 获取骨骼信息示例
+    const std::uintptr_t targetGo = er6::FindGameObjectThroughTag(5);
+    if (targetGo)
+    {
+        auto bones = er6::GetBoneTransformAll(targetGo);
+        for (const auto& bone : bones)
+        {
+            auto pos = er6::GetTransformWorldPosition(bone.transform);
+            // 使用 bone.index, bone.boneName, pos
+        }
     }
 
     er6::ResetContext();
@@ -147,9 +162,10 @@ int main(int argc, char** argv)
 
 ## AutoInit 与 init/* 封装
 
-- `er6::AutoInit()` 会自动定位 Unity 进程并填充全局上下文 `g_ctx`。
-- `include/er6/unity6/init/*` 提供基于 `g_ctx + Mem()` 的薄封装，尽量减少手动传参。
+- `er6::AutoInit()` 会自动定位 Unity 进程并填充全局上下文 `g_ctx`
+- `include/er6/unity6/init/*` 提供基于 `g_ctx + Mem()` 的薄封装，尽量减少手动传参
 - 关键函数列表与最小必要参数汇总见：`docs/autoinit_functions.md`
+- 算法与结构详细说明见：`Analysis/Algorithms/` 与 `Analysis/Structures/`
 
 ---
 
@@ -158,4 +174,3 @@ int main(int argc, char** argv)
 **Platform:** Windows x64
 
 </div>
-

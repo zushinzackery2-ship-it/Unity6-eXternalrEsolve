@@ -10,3 +10,4 @@
 #include "init/msid.hpp"
 #include "init/metadata.hpp"
 #include "init/dumpsdk.hpp"
+#include "init/bones.hpp"
