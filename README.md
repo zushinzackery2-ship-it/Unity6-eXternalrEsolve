@@ -81,6 +81,38 @@
 
 ---
 
+## AutoInit 后可直接调用的 API
+
+调用 `er6::AutoInit()` 成功后，以下 API 可直接使用，无需手动传递 mem/offsets 等参数。
+
+| 分类 | API | 说明 |
+|:-----|:----|:-----|
+| **上下文** | `Pid()` | 返回目标进程 PID |
+|  | `IsInited()` | 是否已初始化 |
+|  | `ResetContext()` | 重置上下文，释放句柄 |
+| **GameObject** | `EnumerateGameObjects()` | 枚举所有 GameObject，返回 `optional<vector<GameObjectEntry>>` |
+|  | `FindGameObjectThroughTag(tag)` | 按 Tag 查找 GameObject |
+|  | `GetGameObjectName(nativeGo)` | 获取 GameObject 名称 |
+| **组件** | `GetTransformComponent(go)` | 获取 Transform 组件 |
+|  | `GetCameraComponent(go)` | 获取 Camera 组件 |
+|  | `GetComponentThroughTypeId(go, typeId)` | 按 TypeId 获取组件 |
+|  | `GetComponentThroughTypeName(go, name)` | 按类型名获取组件 |
+| **Transform** | `GetTransformWorldPosition(transform)` | 获取 Transform 世界坐标 |
+|  | `GetBoneTransformAll(rootGo)` | 获取骨骼列表，返回 `vector<BoneTransformAllItem>` |
+| **相机 / W2S** | `FindMainCamera()` | 查找主相机 |
+|  | `GetCameraMatrix(cam)` | 获取相机 ViewProj 矩阵 |
+|  | `WorldToScreenPoint(viewProj, screen, pos)` | 世界坐标转屏幕坐标 |
+| **MSID** | `FindObjectsOfTypeAll(className)` | 按类名查找所有实例 |
+|  | `FindObjectsOfTypeAll(ns, className)` | 按命名空间+类名查找 |
+|  | `EnumerateMsIdToPointerObjects(opt)` | 枚举 MSID 注册表 |
+| **Metadata** | `ExportGameAssemblyMetadataByScore()` | 导出 metadata 字节 |
+|  | `ExportGameAssemblyMetadataHintJsonTScoreToSidecar(path)` | 导出 hint json |
+|  | `DumpSdk6Dump(paths)` | 导出 SDK |
+
+> **返回值说明**：返回 `optional<T>` 的函数成功时有值，失败时为空；返回 `bool` + out 参数的函数成功返回 true。
+
+---
+
 <details>
 <summary><strong>目录结构</strong></summary>
 
@@ -166,38 +198,6 @@ int main()
 - `include/er6/unity6/init/*` 提供基于 `g_ctx + Mem()` 的薄封装，尽量减少手动传参
 - 关键函数列表与最小必要参数汇总见：`docs/autoinit_functions.md`
 - 算法与结构详细说明见：`Analysis/Algorithms/` 与 `Analysis/Structures/`
-
----
-
-## AutoInit 后可直接调用的 API
-
-调用 `er6::AutoInit()` 成功后，以下 API 可直接使用，无需手动传递 mem/offsets 等参数。
-
-| 分类 | API | 说明 |
-|:-----|:----|:-----|
-| **上下文** | `Pid()` | 返回目标进程 PID |
-|  | `IsInited()` | 是否已初始化 |
-|  | `ResetContext()` | 重置上下文，释放句柄 |
-| **GameObject** | `EnumerateGameObjects()` | 枚举所有 GameObject，返回 `optional<vector<GameObjectEntry>>` |
-|  | `FindGameObjectThroughTag(tag)` | 按 Tag 查找 GameObject |
-|  | `GetGameObjectName(nativeGo)` | 获取 GameObject 名称 |
-| **组件** | `GetTransformComponent(go)` | 获取 Transform 组件 |
-|  | `GetCameraComponent(go)` | 获取 Camera 组件 |
-|  | `GetComponentThroughTypeId(go, typeId)` | 按 TypeId 获取组件 |
-|  | `GetComponentThroughTypeName(go, name)` | 按类型名获取组件 |
-| **Transform** | `GetTransformWorldPosition(transform)` | 获取 Transform 世界坐标 |
-|  | `GetBoneTransformAll(rootGo)` | 获取骨骼列表，返回 `vector<BoneTransformAllItem>` |
-| **相机 / W2S** | `FindMainCamera()` | 查找主相机 |
-|  | `GetCameraMatrix(cam)` | 获取相机 ViewProj 矩阵 |
-|  | `WorldToScreenPoint(viewProj, screen, pos)` | 世界坐标转屏幕坐标 |
-| **MSID** | `FindObjectsOfTypeAll(className)` | 按类名查找所有实例 |
-|  | `FindObjectsOfTypeAll(ns, className)` | 按命名空间+类名查找 |
-|  | `EnumerateMsIdToPointerObjects(opt)` | 枚举 MSID 注册表 |
-| **Metadata** | `ExportGameAssemblyMetadataByScore()` | 导出 metadata 字节 |
-|  | `ExportGameAssemblyMetadataHintJsonTScoreToSidecar(path)` | 导出 hint json |
-|  | `DumpSdk6Dump(paths)` | 导出 SDK |
-
-> **返回值说明**：返回 `optional<T>` 的函数成功时有值，失败时为空；返回 `bool` + out 参数的函数成功返回 true。
 
 ---
 
