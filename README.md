@@ -71,16 +71,6 @@
 
 ---
 
-## 编译要求
-
-- **C++ 标准**：C++17
-- **编译器**：MSVC（Visual Studio 2022）
-- **平台**：Windows x64
-- **链接方式**：静态运行时（/MT）
-- **第三方库**：仓库已包含 `glm/`（工具侧编译 bat 已默认添加 include）
-
----
-
 ## AutoInit 后可直接调用的 API
 
 调用 `er6::AutoInit()` 成功后，以下 API 可直接使用，无需手动传递 mem/offsets 等参数。
@@ -110,6 +100,16 @@
 |  | `DumpSdk6Dump(paths)` | 导出 SDK |
 
 > **返回值说明**：返回 `optional<T>` 的函数成功时有值，失败时为空；返回 `bool` + out 参数的函数成功返回 true。
+
+---
+
+## 编译要求
+
+- **C++ 标准**：C++17
+- **编译器**：MSVC（Visual Studio 2022）
+- **平台**：Windows x64
+- **链接方式**：静态运行时（/MT）
+- **第三方库**：仓库已包含 `glm/`（工具侧编译 bat 已默认添加 include）
 
 ---
 
