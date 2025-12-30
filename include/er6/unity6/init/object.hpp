@@ -12,27 +12,27 @@
 namespace er6
 {
 
-inline bool ReadGameObjectName(std::uintptr_t gameObject, std::string& outName)
+inline bool GetGameObjectName(std::uintptr_t gameObject, std::string& outName)
 {
     if (!IsInited())
     {
         return false;
     }
 
-    return er6::ReadGameObjectName(Mem(), gameObject, g_ctx.off, outName);
+    return er6::ReadNativeGameObjectName(Mem(), gameObject, g_ctx.gomOff, outName);
 }
 
-inline std::optional<std::string> ReadGameObjectName(std::uintptr_t gameObject)
+inline std::optional<std::string> GetGameObjectName(std::uintptr_t gameObject)
 {
     std::string name;
-    if (!ReadGameObjectName(gameObject, name))
+    if (!GetGameObjectName(gameObject, name))
     {
         return std::nullopt;
     }
     return name;
 }
 
-inline bool ReadScriptableObjectName(std::uintptr_t scriptableObject, std::string& outName)
+inline bool GetScriptableObjectName(std::uintptr_t scriptableObject, std::string& outName)
 {
     if (!IsInited())
     {
@@ -42,37 +42,17 @@ inline bool ReadScriptableObjectName(std::uintptr_t scriptableObject, std::strin
     return er6::ReadScriptableObjectName(Mem(), scriptableObject, g_ctx.off, outName);
 }
 
-inline std::optional<std::string> ReadScriptableObjectName(std::uintptr_t scriptableObject)
+inline std::optional<std::string> GetScriptableObjectName(std::uintptr_t scriptableObject)
 {
     std::string name;
-    if (!ReadScriptableObjectName(scriptableObject, name))
+    if (!GetScriptableObjectName(scriptableObject, name))
     {
         return std::nullopt;
     }
     return name;
 }
 
-inline bool ReadNativeGameObjectName(std::uintptr_t nativeGo, std::string& outName)
-{
-    if (!IsInited())
-    {
-        return false;
-    }
-
-    return er6::ReadNativeGameObjectName(Mem(), nativeGo, g_ctx.gomOff, outName);
-}
-
-inline std::optional<std::string> ReadNativeGameObjectName(std::uintptr_t nativeGo)
-{
-    std::string name;
-    if (!ReadNativeGameObjectName(nativeGo, name))
-    {
-        return std::nullopt;
-    }
-    return name;
-}
-
-inline bool ReadManagedObjectTypeInfo(std::uintptr_t managed, TypeInfo& out)
+inline bool GetManagedObjectTypeInfo(std::uintptr_t managed, TypeInfo& out)
 {
     if (!IsInited())
     {
@@ -82,10 +62,10 @@ inline bool ReadManagedObjectTypeInfo(std::uintptr_t managed, TypeInfo& out)
     return er6::ReadManagedObjectTypeInfo(Mem(), managed, g_ctx.off, out);
 }
 
-inline std::optional<TypeInfo> ReadManagedObjectTypeInfo(std::uintptr_t managed)
+inline std::optional<TypeInfo> GetManagedObjectTypeInfo(std::uintptr_t managed)
 {
     TypeInfo info;
-    if (!ReadManagedObjectTypeInfo(managed, info))
+    if (!GetManagedObjectTypeInfo(managed, info))
     {
         return std::nullopt;
     }

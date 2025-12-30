@@ -52,35 +52,79 @@ public:
             return false;
         }
 
+        std::unordered_set<std::uintptr_t> visitedNodes;
+
+        // 遍历 bucket 链表
         std::vector<std::uintptr_t> buckets;
-        if (!GetAllLinkedBucketsFromManager(mem_, managerAddress, off_, buckets) || buckets.empty())
+        if (GetAllLinkedBucketsFromManager(mem_, managerAddress, off_, buckets) && !buckets.empty())
         {
-            return false;
+            for (std::uintptr_t bucketPtr : buckets)
+            {
+                std::uintptr_t listHead = 0;
+                if (!GetBucketListHead(mem_, bucketPtr, off_, listHead))
+                {
+                    continue;
+                }
+
+                std::uintptr_t node = 0;
+                if (!GetListNodeFirst(mem_, listHead, off_, node))
+                {
+                    continue;
+                }
+
+                for (; node;)
+                {
+                    if (visitedNodes.find(node) != visitedNodes.end())
+                    {
+                        break;
+                    }
+                    visitedNodes.insert(node);
+
+                    std::uintptr_t nativeObject = 0;
+                    if (!GetListNodeNative(mem_, node, off_, nativeObject))
+                    {
+                        break;
+                    }
+
+                    std::uintptr_t managedObject = 0;
+                    if (nativeObject)
+                    {
+                        GetManagedFromNative(mem_, nativeObject, off_, managedObject);
+                    }
+
+                    if (nativeObject || managedObject)
+                    {
+                        GameObjectEntry e;
+                        e.node = node;
+                        e.nativeObject = nativeObject;
+                        e.managedObject = managedObject;
+                        out.push_back(e);
+                    }
+
+                    std::uintptr_t next = 0;
+                    if (!GetListNodeNext(mem_, node, off_, next) || !next || next == listHead)
+                    {
+                        break;
+                    }
+
+                    node = next;
+                }
+            }
         }
 
-        for (std::uintptr_t bucketPtr : buckets)
+        // 遍历 +0x18 链表
+        std::uintptr_t localListHead = 0;
+        if (GetGomLocalGameObjectListHead(mem_, managerAddress, off_, localListHead) && localListHead)
         {
-            std::uintptr_t listHead = 0;
-            if (!GetBucketListHead(mem_, bucketPtr, off_, listHead))
-            {
-                continue;
-            }
-
-            std::uintptr_t node = 0;
-            if (!GetListNodeFirst(mem_, listHead, off_, node))
-            {
-                continue;
-            }
-
-            std::unordered_set<std::uintptr_t> visited;
+            std::uintptr_t node = localListHead;
 
             for (; node;)
             {
-                if (visited.find(node) != visited.end())
+                if (visitedNodes.find(node) != visitedNodes.end())
                 {
                     break;
                 }
-                visited.insert(node);
+                visitedNodes.insert(node);
 
                 std::uintptr_t nativeObject = 0;
                 if (!GetListNodeNative(mem_, node, off_, nativeObject))
@@ -104,7 +148,7 @@ public:
                 }
 
                 std::uintptr_t next = 0;
-                if (!GetListNodeNext(mem_, node, off_, next) || !next || next == listHead)
+                if (!GetListNodeNext(mem_, node, off_, next) || !next || next == localListHead)
                 {
                     break;
                 }

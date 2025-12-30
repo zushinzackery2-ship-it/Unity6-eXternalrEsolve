@@ -169,6 +169,73 @@ int main()
 
 ---
 
+## AutoInit 后可直接调用的 API
+
+调用 `er6::AutoInit()` 成功后，以下 API 可直接使用，无需手动传递 mem/offsets 等参数。
+
+### 上下文
+
+| API | 说明 |
+|-----|------|
+| `Pid()` | 返回目标进程 PID |
+| `IsInited()` | 是否已初始化 |
+| `ResetContext()` | 重置上下文，释放句柄 |
+
+### GameObject 遍历
+
+| API | 说明 |
+|-----|------|
+| `EnumerateGameObjects()` | 枚举所有 GameObject，返回 `optional<vector<GameObjectEntry>>` |
+| `FindGameObjectThroughTag(tag)` | 按 Tag 查找 GameObject |
+| `GetGameObjectName(nativeGo)` | 获取 GameObject 名称 |
+
+### 组件
+
+| API | 说明 |
+|-----|------|
+| `GetTransformComponent(go)` | 获取 Transform 组件 |
+| `GetCameraComponent(go)` | 获取 Camera 组件 |
+| `GetComponentThroughTypeId(go, typeId)` | 按 TypeId 获取组件 |
+| `GetComponentThroughTypeName(go, "Camera")` | 按类型名获取组件 |
+
+### Transform / 坐标
+
+| API | 说明 |
+|-----|------|
+| `GetTransformWorldPosition(transform)` | 获取 Transform 世界坐标 |
+| `GetBoneTransformAll(rootGo)` | 获取骨骼列表（返回 `vector<BoneTransformAllItem>`） |
+
+### 相机 / W2S
+
+| API | 说明 |
+|-----|------|
+| `FindMainCamera()` | 查找主相机 |
+| `GetCameraMatrix(cam)` | 获取相机 ViewProj 矩阵 |
+| `WorldToScreenPoint(viewProj, screen, worldPos)` | 世界坐标转屏幕坐标 |
+
+### MSID / 类型查找
+
+| API | 说明 |
+|-----|------|
+| `FindObjectsOfTypeAll("ClassName")` | 按类名查找所有实例 |
+| `FindObjectsOfTypeAll("Namespace", "ClassName")` | 按命名空间+类名查找 |
+| `EnumerateMsIdToPointerObjects(opt)` | 枚举 MSID 注册表 |
+
+### Metadata 导出
+
+| API | 说明 |
+|-----|------|
+| `ExportGameAssemblyMetadataByScore()` | 导出 metadata 字节 |
+| `ExportGameAssemblyMetadataHintJsonTScoreToSidecar(path)` | 导出 hint json |
+| `DumpSdk6Dump(paths)` | 导出 SDK |
+
+### 返回值说明
+
+- 返回 `optional<T>` 的函数：成功返回值，失败返回空（用 `->` 或 `*` 访问内容）
+- 返回 `bool` + out 参数的函数：成功返回 true，结果写入 out 参数
+
+---
+
 <div align="center">
 
 **Platform:** Windows x64
