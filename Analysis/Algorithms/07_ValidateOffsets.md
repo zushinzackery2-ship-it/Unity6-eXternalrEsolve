@@ -10,10 +10,9 @@
 - `mem`
 - `TransformOffsets off`
 - `transformAddress`
-- `maxDepth`
 
 流程：
-- 调用 `GetTransformWorldPosition(mem, off, transformAddress, pos, maxDepth)`
+- 调用 `GetTransformWorldPosition(mem, off, transformAddress, pos)`
 - 判断 `pos.x/y/z` 是否都是有限数（`std::isfinite`）
 
 输出：

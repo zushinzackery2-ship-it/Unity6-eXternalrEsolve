@@ -73,7 +73,7 @@
 
 ### Transform 封装
 
-- `GetTransformWorldPosition(transformAddress, outPos, maxDepth)` / `GetTransformWorldPosition(transformAddress, maxDepth)`
+- `GetTransformWorldPosition(transformAddress, outPos)` / `GetTransformWorldPosition(transformAddress)`
 
 ### W2S（世界坐标到屏幕坐标）
 

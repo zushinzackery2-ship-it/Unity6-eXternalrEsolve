@@ -9,20 +9,20 @@
 namespace er6
 {
 
-inline bool GetTransformWorldPosition(std::uintptr_t transformAddress, glm::vec3& outPos, int maxDepth)
+inline bool GetTransformWorldPosition(std::uintptr_t transformAddress, glm::vec3& outPos)
 {
     if (!IsInited())
     {
         return false;
     }
 
-    return er6::GetTransformWorldPosition(Mem(), g_ctx.transformOff, transformAddress, outPos, maxDepth);
+    return er6::GetTransformWorldPosition(Mem(), g_ctx.transformOff, transformAddress, outPos);
 }
 
-inline std::optional<glm::vec3> GetTransformWorldPosition(std::uintptr_t transformAddress, int maxDepth = 64)
+inline std::optional<glm::vec3> GetTransformWorldPosition(std::uintptr_t transformAddress)
 {
     glm::vec3 pos(0.0f);
-    if (!GetTransformWorldPosition(transformAddress, pos, maxDepth))
+    if (!GetTransformWorldPosition(transformAddress, pos))
     {
         return std::nullopt;
     }

@@ -63,7 +63,7 @@
 | **MSID** | `MsIdSetPtr()` / `MsIdEntriesBase()` / `MsIdCount()` | 读取 ms_id_to_pointer set 元数据 |
 |  | `EnumerateMsIdToPointerObjects(opt)` / `FindObjectsOfTypeAll(ns, name)` | 枚举或按命名空间+类型名查找 `UnityEngine.Object` 实例 |
 | **对象/名称** | `ReadGameObjectName(nativeGo)` / `ReadScriptableObjectName(nativeSo)` | 读取常见 Native/Managed 对象名称 |
-| **Transform / Camera / W2S** | `GetTransformWorldPosition(transformPtr, maxDepth)` | 解析层级状态，输出世界坐标 |
+| **Transform / Camera / W2S** | `GetTransformWorldPosition(transformPtr)` | 解析层级状态，输出世界坐标 |
 |  | `FindMainCamera()` / `GetCameraMatrix(nativeCamera)` / `W2S(viewProj, screen, world)` | 找主相机、读取视图投影矩阵并执行世界转屏幕 |
 | **Bones** | `GetBoneTransformAll(rootGo)` / `GetTransformWorldPosition(transform)` | 遍历 Transform 子树获取骨骼信息与世界坐标 |
 | **Metadata / Hint** | `ExportGameAssemblyMetadataByScore()` / `ExportGameAssemblyMetadataHintJsonTScoreToSidecar(path)` | 一次性导出 metadata bytes 与 hint json |
