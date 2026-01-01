@@ -30,7 +30,7 @@ inline bool IsReadableByte(const IMemoryAccessor& mem, std::uintptr_t address)
 inline std::uint32_t CountUnityObjectsInMsIdEntriesPool(
     const IMemoryAccessor& mem,
     std::uintptr_t entriesBase,
-    std::uint32_t count,
+    std::uint32_t capacity,
     const Offsets& off,
     const UnityPlayerRange& unityPlayer)
 {
@@ -38,12 +38,12 @@ inline std::uint32_t CountUnityObjectsInMsIdEntriesPool(
     {
         return 0;
     }
-    if (count == 0 || count > 5000000)
+    if (capacity == 0 || capacity > 50000000)
     {
         return 0;
     }
 
-    const std::uint64_t poolSizeU64 = static_cast<std::uint64_t>(count) * static_cast<std::uint64_t>(off.ms_id_entry_stride);
+    const std::uint64_t poolSizeU64 = static_cast<std::uint64_t>(capacity) * static_cast<std::uint64_t>(off.ms_id_entry_stride);
     if (poolSizeU64 == 0 || poolSizeU64 > 128ull * 1024ull * 1024ull)
     {
         return 0;
@@ -63,7 +63,7 @@ inline std::uint32_t CountUnityObjectsInMsIdEntriesPool(
     std::uint8_t objBuf[0x20] = {};
 
     std::uint32_t objCount = 0;
-    const std::uint32_t total = count;
+    const std::uint32_t total = capacity;
     for (std::uint32_t i = 0; i < total; ++i)
     {
         const std::size_t entryOff = static_cast<std::size_t>(i) * static_cast<std::size_t>(off.ms_id_entry_stride);
@@ -194,14 +194,21 @@ inline bool FindMsIdToPointerSlotVaByScan(
                 continue;
             }
 
-            std::uint32_t count = 0;
-            std::memcpy(&count, baseData + static_cast<std::size_t>(off.ms_id_set_count), sizeof(count));
-            if (count == 0 || count > 5000000)
+            std::uint32_t capacity = 0;
+            std::memcpy(&capacity, baseData + static_cast<std::size_t>(off.ms_id_set_capacity), sizeof(capacity));
+            if (capacity == 0 || capacity > 50000000)
             {
                 continue;
             }
 
-            const std::uint32_t objCount = CountUnityObjectsInMsIdEntriesPool(mem, entriesBase, count, off, unityPlayerRange);
+            std::uint32_t count = 0;
+            std::memcpy(&count, baseData + static_cast<std::size_t>(off.ms_id_set_count), sizeof(count));
+            if (count == 0 || count > 5000000 || count > capacity)
+            {
+                continue;
+            }
+
+            const std::uint32_t objCount = CountUnityObjectsInMsIdEntriesPool(mem, entriesBase, capacity, off, unityPlayerRange);
             if (objCount == 0)
             {
                 continue;

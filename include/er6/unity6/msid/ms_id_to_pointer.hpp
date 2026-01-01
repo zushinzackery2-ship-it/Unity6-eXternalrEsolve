@@ -12,8 +12,8 @@ namespace er6
 struct MsIdToPointerSetRaw
 {
     std::uintptr_t entriesBase = 0;
+    std::uint32_t capacity = 0;
     std::uint32_t count = 0;
-    std::uint32_t unk0C = 0;
 };
 
 struct MsIdToPointerEntryRaw
@@ -52,9 +52,16 @@ inline bool ReadMsIdToPointerSet(const IMemoryAccessor& mem, std::uintptr_t msId
     return true;
 }
 
-inline bool ReadMsIdEntriesHeader(const IMemoryAccessor& mem, const MsIdToPointerSet& set, const Offsets& off, std::uintptr_t& outEntriesBase, std::uint32_t& outCount)
+inline bool ReadMsIdEntriesHeader(
+    const IMemoryAccessor& mem,
+    const MsIdToPointerSet& set,
+    const Offsets& off,
+    std::uintptr_t& outEntriesBase,
+    std::uint32_t& outCapacity,
+    std::uint32_t& outCount)
 {
     outEntriesBase = 0;
+    outCapacity = 0;
     outCount = 0;
 
     if (!set.set)
@@ -63,9 +70,15 @@ inline bool ReadMsIdEntriesHeader(const IMemoryAccessor& mem, const MsIdToPointe
     }
 
     std::uintptr_t entriesBase = 0;
+    std::uint32_t capacity = 0;
     std::uint32_t count = 0;
 
     if (!ReadPtr(mem, set.set + off.ms_id_set_entries_base, entriesBase))
+    {
+        return false;
+    }
+
+    if (!ReadValue(mem, set.set + off.ms_id_set_capacity, capacity))
     {
         return false;
     }
@@ -80,12 +93,18 @@ inline bool ReadMsIdEntriesHeader(const IMemoryAccessor& mem, const MsIdToPointe
         return false;
     }
 
-    if (count == 0 || count > 5000000)
+    if (capacity == 0 || capacity > 50000000)
+    {
+        return false;
+    }
+
+    if (count == 0 || count > 5000000 || count > capacity)
     {
         return false;
     }
 
     outEntriesBase = entriesBase;
+    outCapacity = capacity;
     outCount = count;
     return true;
 }

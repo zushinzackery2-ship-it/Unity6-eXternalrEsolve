@@ -40,8 +40,9 @@ inline std::uintptr_t MsIdEntriesBase()
     }
 
     std::uintptr_t entriesBase = 0;
+    std::uint32_t capacity = 0;
     std::uint32_t count = 0;
-    if (!er6::ReadMsIdEntriesHeader(Mem(), set, g_ctx.off, entriesBase, count))
+    if (!er6::ReadMsIdEntriesHeader(Mem(), set, g_ctx.off, entriesBase, capacity, count))
     {
         return 0;
     }
@@ -62,8 +63,9 @@ inline std::uint32_t MsIdCount()
     }
 
     std::uintptr_t entriesBase = 0;
+    std::uint32_t capacity = 0;
     std::uint32_t count = 0;
-    if (!er6::ReadMsIdEntriesHeader(Mem(), set, g_ctx.off, entriesBase, count))
+    if (!er6::ReadMsIdEntriesHeader(Mem(), set, g_ctx.off, entriesBase, capacity, count))
     {
         return 0;
     }

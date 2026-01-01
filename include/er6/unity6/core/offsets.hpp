@@ -22,7 +22,8 @@ struct Offsets
     std::uint32_t il2cppclass_parent = 0x58;
 
     std::uint32_t ms_id_set_entries_base = 0x00;
-    std::uint32_t ms_id_set_count = 0x08;
+    std::uint32_t ms_id_set_capacity = 0x08;
+    std::uint32_t ms_id_set_count = 0x0C;
 
     std::uint32_t ms_id_entry_key = 0x00;
     std::uint32_t ms_id_entry_object = 0x10;

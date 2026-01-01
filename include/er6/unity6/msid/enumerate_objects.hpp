@@ -77,13 +77,14 @@ inline bool EnumerateMsIdToPointerObjects(
     }
 
     std::uintptr_t entriesBase = 0;
+    std::uint32_t capacity = 0;
     std::uint32_t count = 0;
-    if (!ReadMsIdEntriesHeader(mem, set, off, entriesBase, count))
+    if (!ReadMsIdEntriesHeader(mem, set, off, entriesBase, capacity, count))
     {
         return false;
     }
 
-    const std::uint32_t total = count + 8;
+    const std::uint32_t total = capacity;
 
     for (std::uint32_t i = 0; i < total; ++i)
     {
