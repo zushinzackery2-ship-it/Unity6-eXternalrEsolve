@@ -1,7 +1,7 @@
 <div align="center">
 
 # ExternalResolve6
-**问题较多，正在优化**
+**有问题，正在修**
 
 **Unity6 运行时内存结构算法还原库（er6 / header-only）**
 
@@ -208,4 +208,5 @@ int main()
 **Platform:** Windows x64 | **License:** MIT
 
 </div>
+
 
