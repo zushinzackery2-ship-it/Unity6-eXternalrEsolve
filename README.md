@@ -23,7 +23,7 @@
 > [!NOTE]
 > **版本兼容性说明**  
 > 本项目面向 Unity6（Windows x64）。对比 Unity202x 版本在结构偏移与布局上存在明确差异。  
-> 本项目暂未对"Mono"版本进行实际测试，未确定功能实现绝对成立。  
+> 暂未还原MonoVtable与MonoClass结构，暂时只能用于IL2CPP游戏
 > Unity202x版本请移步至仓库:https://github.com/zushinzackery2-ship-it/Unity202x-eXternalrEsolve    
 
 > [!IMPORTANT]
@@ -207,5 +207,6 @@ int main()
 **Platform:** Windows x64 | **License:** MIT
 
 </div>
+
 
 
