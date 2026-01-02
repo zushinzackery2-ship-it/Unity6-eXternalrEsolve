@@ -18,9 +18,10 @@ struct MsIdToPointerSetRaw
 
 struct MsIdToPointerEntryRaw
 {
-    std::uint32_t key = 0;
+    std::uint32_t hashMask = 0;
     std::uint32_t unk04 = 0;
-    std::uint64_t unk08 = 0;
+    std::uint32_t key = 0;
+    std::uint32_t unk0C = 0;
     std::uintptr_t object = 0;
 };
 #pragma pack(pop)

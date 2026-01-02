@@ -25,19 +25,8 @@ inline bool ReadManagedObjectKlass(const IMemoryAccessor& mem, std::uintptr_t ma
         return false;
     }
 
-    std::uintptr_t gchandle = 0;
-    if (!ReadPtr(mem, managed + off.managed_cached_gchandle, gchandle))
-    {
-        return false;
-    }
-
-    if (!IsCanonicalUserPtr(gchandle))
-    {
-        return false;
-    }
-
     std::uintptr_t klass = 0;
-    if (!ReadPtr(mem, gchandle + off.gchandle_to_klass, klass))
+    if (!ReadPtr(mem, managed + off.managed_to_klass, klass))
     {
         return false;
     }

@@ -24,12 +24,12 @@
 
 步骤:
 1. 从槽读取 MsIdToPointerSet
-2. 读取条目头 (entriesBase, count)
-3. total = count + 8 (哈希冲突缓冲)
+2. 读取条目头 (entriesBase, capacity, count)
+3. total = capacity
 4. 对于 i = 0 到 total:
    a. 计算条目地址 = entriesBase + i * stride
    b. 读取 MsIdToPointerEntryRaw (24 字节)
-   c. 如果 key == 0 或 key >= 0xFFFFFFFE 则跳过
+   c. key = entry+0x08，如果 key == 0 或 key >= 0xFFFFFFFE 则跳过
    d. obj = entry.object
    e. 如果不是 IsProbablyUnityObject(obj) 则跳过
    f. 从托管对象链读取 klass
@@ -54,16 +54,16 @@
 1. obj 是规范用户指针
 2. obj 是 8 字节对齐
 3. vtable 在 UnityPlayer 范围内
-4. managed 指针是规范的
+4. gchandle/managed 指针是规范的
 ```
 
 ### ReadUnityObjectKlass
 
 ```
 链:
-  obj+0x18 --> managed
-  managed+0x00 --> gchandle
-  gchandle+0x00 --> klass
+  obj+0x18 --> gchandle
+  gchandle+0x00 --> managed
+  managed+0x00 --> klass
 ```
 
 ### IsClassOrParent

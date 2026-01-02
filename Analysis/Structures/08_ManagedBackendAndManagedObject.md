@@ -46,8 +46,7 @@ struct TypeInfo
 ### ReadManagedObjectKlass
 
 链路：
-- `ManagedObject + off.managed_cached_gchandle -> gchandle`
-- `gchandle + off.gchandle_to_klass -> klass`
+- `ManagedObject + off.managed_to_klass -> klass`
 
 ### ReadManagedObjectTypeInfo
 

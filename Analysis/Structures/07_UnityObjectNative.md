@@ -30,7 +30,10 @@ struct UnityPlayerRange
 - **Canonical**：`IsCanonicalUserPtr(obj)` 必须为真
 - **对齐**：`(obj & 0x7) == 0`
 - **vtable 归属**：读取 `obj+0x00` 的 `vtable`，要求 `UnityPlayerRange.Contains(vtable)`
-- **managed 指针有效**：读取 `obj + off.unity_object_managed_ptr`，要求 canonical
+- **gchandle/managed 指针有效**：
+  - `NativeObject + off.unity_object_gchandle_ptr -> gchandle`
+  - `gchandle + off.gchandle_to_managed -> managed`
+  两者都要求 canonical
 
 ## MSID（ms_IDToPointer）与原生 Unity 对象
 
@@ -47,8 +50,8 @@ MSID（`Object::ms_IDToPointer`）是 `UnityEngine.Object` 的全局注册哈希
 
 按链路取出 `Il2CppClass*`：
 
-- `NativeObject + off.unity_object_managed_ptr -> managed`
-- `managed + off.managed_cached_gchandle -> gchandle`
-- `gchandle + off.gchandle_to_klass -> klass`
+- `NativeObject + off.unity_object_gchandle_ptr -> gchandle`
+- `gchandle + off.gchandle_to_managed -> managed`
+- `managed + off.managed_to_klass -> klass`
 
 （说明中我统一用 `Base+0x??->Field` 这种形式，避免 `*()` 解引用写法）

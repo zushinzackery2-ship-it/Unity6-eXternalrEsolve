@@ -22,8 +22,8 @@
 
 步骤:
 1. 读取 MsIdToPointerSet
-2. 读取 entriesBase 和 count
-3. total = count + 8 (额外扫描边界)
+2. 读取 entriesBase、capacity、count
+3. total = capacity
 4. 对于每个 entry (i = 0..total-1):
    a. 读取 MsIdToPointerEntryRaw
    b. 跳过无效 key (0, 0xFFFFFFFF, >= 0xFFFFFFFE)

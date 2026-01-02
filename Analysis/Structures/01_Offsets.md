@@ -13,11 +13,11 @@ struct Offsets
     game_object_name_ptr      = 0x50   // GameObject -> 名称指针
     scriptable_object_name_ptr = 0x38  // ScriptableObject -> 名称指针
     unity_object_instance_id  = 0x08   // Native 对象 -> 实例 ID
-    unity_object_managed_ptr  = 0x18   // Native 对象 -> 托管对象指针
+    unity_object_gchandle_ptr = 0x18   // Native 对象 -> GCHandle
 
-    // 托管对象布局
-    managed_cached_gchandle   = 0x00   // 托管对象 -> GCHandle
-    gchandle_to_klass         = 0x00   // GCHandle -> Il2CppClass*
+    // Handle / 托管对象布局
+    gchandle_to_managed       = 0x00   // GCHandle -> ManagedObject
+    managed_to_klass          = 0x00   // ManagedObject -> Il2CppClass*
 
     // Il2CppClass 布局
     il2cppclass_name_ptr      = 0x10   // Il2CppClass -> 类名字符串指针
@@ -26,10 +26,12 @@ struct Offsets
 
     // MSID Set 布局
     ms_id_set_entries_base    = 0x00   // MsIdToPointerSet -> 条目数组基址
-    ms_id_set_count           = 0x08   // MsIdToPointerSet -> 条目数量
+    ms_id_set_capacity        = 0x08   // MsIdToPointerSet -> 桶数量(capacity)
+    ms_id_set_count           = 0x0C   // MsIdToPointerSet -> 有效元素数量(count)
 
     // MSID Entry 布局
-    ms_id_entry_key           = 0x00   // Entry -> 实例 ID 键
+    ms_id_entry_hash_mask     = 0x00   // Entry -> hashMask
+    ms_id_entry_key           = 0x08   // Entry -> 实例 ID 键
     ms_id_entry_object        = 0x10   // Entry -> Native 对象指针
     ms_id_entry_stride        = 0x18   // Entry 大小 (24 字节)
 }
@@ -41,7 +43,7 @@ struct Offsets
 ```
 +0x00  vtable (指向 UnityPlayer 模块内部)
 +0x08  instanceId (uint32)
-+0x18  managed (托管对象指针)
++0x18  gchandle (GCHandle)
 ...
 +0x38  [ScriptableObject] 名称指针
 ...
@@ -50,10 +52,13 @@ struct Offsets
 
 ### 托管对象
 ```
-+0x00  gchandle (指针)
-       |
-       v
-       +0x00  klass (Il2CppClass*)
++0x00  klass (Il2CppClass*)
+...
+```
+
+### GCHandle
+```
++0x00  managed (ManagedObject)
 ```
 
 ### Il2CppClass

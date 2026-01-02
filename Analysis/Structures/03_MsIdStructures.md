@@ -12,15 +12,16 @@
 struct MsIdToPointerSetRaw    // 大小 = 0x10
 {
     entriesBase  : uintptr_t   // +0x00  条目数组指针
-    count        : uint32_t    // +0x08  条目数量
-    unk0C        : uint32_t    // +0x0C  未知/填充
+    capacity     : uint32_t    // +0x08  桶数量(capacity)
+    count        : uint32_t    // +0x0C  有效元素数量(count)
 }
 
 struct MsIdToPointerEntryRaw  // 大小 = 0x18
 {
-    key     : uint32_t    // +0x00  实例 ID
-    unk04   : uint32_t    // +0x04  未知
-    unk08   : uint64_t    // +0x08  未知
+    hashMask : uint32_t   // +0x00  hashMask
+    unk04    : uint32_t   // +0x04  未知
+    key      : uint32_t   // +0x08  实例 ID
+    unk0C    : uint32_t   // +0x0C  未知
     object  : uintptr_t   // +0x10  Native 对象指针
 }
 #pragma pack(pop)
@@ -77,22 +78,23 @@ UnityPlayer 模块
 ```
 MsIdToPointerSetRaw
 +0x00  entriesBase -----> Entry[0]
-+0x08  count             Entry[1]
-+0x0C  unk0C             Entry[2]
-                         ...
-                         Entry[count-1]
++0x08  capacity          Entry[1]
++0x0C  count             Entry[2]
+                          ...
+                         Entry[capacity-1]
 ```
 
 ### Entry 数组
 ```
 Entry[i] (stride = 0x18)
-+0x00  key (instanceId)
++0x00  hashMask
 +0x04  unk04
-+0x08  unk08
++0x08  key (instanceId)
++0x0C  unk0C
 +0x10  object -------> Native Unity 对象
                        +0x00 vtable
                        +0x08 instanceId
-                       +0x18 managed
+                       +0x18 gchandle
                        ...
 ```
 

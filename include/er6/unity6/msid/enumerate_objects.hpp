@@ -113,12 +113,16 @@ inline bool EnumerateMsIdToPointerObjects(
             
             if (vtable < unityPlayer.base || vtable >= (unityPlayer.base + unityPlayer.size)) continue;
 
-            if (off.unity_object_managed_ptr >= kObjHeaderSize) continue;
-            std::uintptr_t managed = *reinterpret_cast<std::uintptr_t*>(objBuffer + off.unity_object_managed_ptr);
+            if (off.unity_object_gchandle_ptr >= kObjHeaderSize) continue;
+            std::uintptr_t gchandle = *reinterpret_cast<std::uintptr_t*>(objBuffer + off.unity_object_gchandle_ptr);
+            if (!IsCanonicalUserPtr(gchandle)) continue;
+
+            std::uintptr_t managed = 0;
+            if (!ReadPtr(mem, gchandle + off.gchandle_to_managed, managed)) continue;
             if (!IsCanonicalUserPtr(managed)) continue;
 
             std::uintptr_t klass = 0;
-            if (!ReadPtr(mem, managed, klass)) continue; 
+            if (!ReadPtr(mem, managed + off.managed_to_klass, klass)) continue; 
             
             bool isGo = false;
             bool isSo = false;

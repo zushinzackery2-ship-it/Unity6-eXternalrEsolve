@@ -43,81 +43,108 @@ inline std::uint32_t CountUnityObjectsInMsIdEntriesPool(
         return 0;
     }
 
-    const std::uint64_t poolSizeU64 = static_cast<std::uint64_t>(capacity) * static_cast<std::uint64_t>(off.ms_id_entry_stride);
-    if (poolSizeU64 == 0 || poolSizeU64 > 128ull * 1024ull * 1024ull)
-    {
-        return 0;
-    }
-    const std::size_t poolSize = static_cast<std::size_t>(poolSizeU64);
-
-    std::vector<std::uint8_t> pool;
-    pool.resize(poolSize);
-    if (!mem.Read(entriesBase, pool.data(), pool.size()))
-    {
-        return 0;
-    }
-
     const std::uintptr_t moduleBase = unityPlayer.base;
     const std::uintptr_t moduleEnd = unityPlayer.base + static_cast<std::uintptr_t>(unityPlayer.size);
 
-    std::uint8_t objBuf[0x20] = {};
+    const std::uint32_t kChunkEntries = 65536;
+    std::vector<std::uint8_t> chunk;
+    chunk.resize(static_cast<std::size_t>(kChunkEntries) * static_cast<std::size_t>(off.ms_id_entry_stride));
+
+    const std::uint32_t kMaxSamples = 50000;
+    std::uint32_t step = 1;
+    std::uint32_t maxIters = capacity;
+    if (capacity > kMaxSamples)
+    {
+        step = capacity / kMaxSamples;
+        if (step == 0)
+        {
+            step = 1;
+        }
+        maxIters = kMaxSamples;
+    }
 
     std::uint32_t objCount = 0;
-    const std::uint32_t total = capacity;
-    for (std::uint32_t i = 0; i < total; ++i)
+    std::uint32_t iters = 0;
+    for (std::uint32_t base = 0; base < capacity && iters < maxIters; base += kChunkEntries)
     {
-        const std::size_t entryOff = static_cast<std::size_t>(i) * static_cast<std::size_t>(off.ms_id_entry_stride);
-        if (entryOff + static_cast<std::size_t>(off.ms_id_entry_object) + sizeof(std::uintptr_t) > pool.size())
+        std::uint32_t current = capacity - base;
+        if (current > kChunkEntries)
         {
-            break;
+            current = kChunkEntries;
         }
 
-        std::uint32_t key = 0;
-        std::memcpy(&key, pool.data() + entryOff + static_cast<std::size_t>(off.ms_id_entry_key), sizeof(key));
-        if (key == 0xFFFFFFFFu || key == 0xFFFFFFFEu)
+        const std::uintptr_t chunkVa = entriesBase + static_cast<std::uintptr_t>(base) * off.ms_id_entry_stride;
+        const std::size_t chunkBytes = static_cast<std::size_t>(current) * static_cast<std::size_t>(off.ms_id_entry_stride);
+        if (!mem.Read(chunkVa, chunk.data(), chunkBytes))
         {
             continue;
         }
 
-        std::uintptr_t obj = 0;
-        std::memcpy(&obj, pool.data() + entryOff + static_cast<std::size_t>(off.ms_id_entry_object), sizeof(obj));
-        if (!IsCanonicalUserPtr(obj))
+        for (std::uint32_t j = 0; j < current && iters < maxIters; ++j)
         {
-            continue;
-        }
+            const std::uint32_t slotIndex = base + j;
+            if (slotIndex % step != 0)
+            {
+                continue;
+            }
+            ++iters;
 
-        if (!mem.Read(obj, objBuf, sizeof(objBuf)))
-        {
-            continue;
-        }
+            const std::size_t entryOff = static_cast<std::size_t>(j) * static_cast<std::size_t>(off.ms_id_entry_stride);
+            const MsIdToPointerEntryRaw* entry = reinterpret_cast<const MsIdToPointerEntryRaw*>(chunk.data() + entryOff);
 
-        std::uintptr_t vtable = 0;
-        std::memcpy(&vtable, objBuf, sizeof(vtable));
-        if (vtable < moduleBase || vtable >= moduleEnd)
-        {
-            continue;
-        }
+            const std::uint32_t key = entry->key;
+            if (key == 0 || key == 0xFFFFFFFFu || key == 0xFFFFFFFEu)
+            {
+                continue;
+            }
 
-        if (static_cast<std::size_t>(off.unity_object_managed_ptr) + sizeof(std::uintptr_t) > sizeof(objBuf))
-        {
-            continue;
-        }
+            const std::uintptr_t obj = entry->object;
+            if (!IsCanonicalUserPtr(obj))
+            {
+                continue;
+            }
 
-        std::uintptr_t managed = 0;
-        std::memcpy(&managed, objBuf + static_cast<std::size_t>(off.unity_object_managed_ptr), sizeof(managed));
-        if (!IsCanonicalUserPtr(managed))
-        {
-            continue;
-        }
-        if (!IsReadableByte(mem, managed))
-        {
-            continue;
-        }
+            std::uintptr_t vtable = 0;
+            if (!ReadPtr(mem, obj, vtable))
+            {
+                continue;
+            }
+            if (vtable < moduleBase || vtable >= moduleEnd)
+            {
+                continue;
+            }
 
-        ++objCount;
-        if (i >= 10000 && objCount == 0)
-        {
-            return 0;
+            std::uintptr_t gchandle = 0;
+            if (!ReadPtr(mem, obj + off.unity_object_gchandle_ptr, gchandle))
+            {
+                continue;
+            }
+            if (!IsCanonicalUserPtr(gchandle))
+            {
+                continue;
+            }
+
+            std::uintptr_t managed = 0;
+            if (!ReadPtr(mem, gchandle + off.gchandle_to_managed, managed))
+            {
+                continue;
+            }
+            if (!IsCanonicalUserPtr(managed))
+            {
+                continue;
+            }
+
+            std::uintptr_t klass = 0;
+            if (!ReadPtr(mem, managed + off.managed_to_klass, klass))
+            {
+                continue;
+            }
+            if (!IsCanonicalUserPtr(klass))
+            {
+                continue;
+            }
+
+            ++objCount;
         }
     }
 

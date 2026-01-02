@@ -46,8 +46,19 @@ inline bool IsProbablyUnityObject(const IMemoryAccessor& mem, std::uintptr_t obj
         return false;
     }
 
+    std::uintptr_t gchandle = 0;
+    if (!ReadPtr(mem, obj + off.unity_object_gchandle_ptr, gchandle))
+    {
+        return false;
+    }
+
+    if (!IsCanonicalUserPtr(gchandle))
+    {
+        return false;
+    }
+
     std::uintptr_t managed = 0;
-    if (!ReadPtr(mem, obj + off.unity_object_managed_ptr, managed))
+    if (!ReadPtr(mem, gchandle + off.gchandle_to_managed, managed))
     {
         return false;
     }
@@ -70,19 +81,8 @@ inline bool ReadUnityObjectKlass(const IMemoryAccessor& mem, std::uintptr_t obj,
 {
     outKlass = 0;
 
-    std::uintptr_t managed = 0;
-    if (!ReadPtr(mem, obj + off.unity_object_managed_ptr, managed))
-    {
-        return false;
-    }
-
-    if (!IsCanonicalUserPtr(managed))
-    {
-        return false;
-    }
-
     std::uintptr_t gchandle = 0;
-    if (!ReadPtr(mem, managed + off.managed_cached_gchandle, gchandle))
+    if (!ReadPtr(mem, obj + off.unity_object_gchandle_ptr, gchandle))
     {
         return false;
     }
@@ -92,8 +92,19 @@ inline bool ReadUnityObjectKlass(const IMemoryAccessor& mem, std::uintptr_t obj,
         return false;
     }
 
+    std::uintptr_t managed = 0;
+    if (!ReadPtr(mem, gchandle + off.gchandle_to_managed, managed))
+    {
+        return false;
+    }
+
+    if (!IsCanonicalUserPtr(managed))
+    {
+        return false;
+    }
+
     std::uintptr_t klass = 0;
-    if (!ReadPtr(mem, gchandle + off.gchandle_to_klass, klass))
+    if (!ReadPtr(mem, managed + off.managed_to_klass, klass))
     {
         return false;
     }
