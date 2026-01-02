@@ -1,7 +1,6 @@
 <div align="center">
 
 # ExternalResolve6
-**有问题，正在修**
 
 **Unity6 运行时内存结构算法还原库（er6 / header-only）**
 
