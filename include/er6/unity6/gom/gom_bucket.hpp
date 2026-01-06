@@ -46,7 +46,7 @@ inline bool GetBucketHashmask(const IMemoryAccessor& mem, std::uintptr_t bucketP
     return ReadValue(mem, bucketPtr + off.bucket.hash_mask, outMask);
 }
 
-inline bool GetBucketKey(const IMemoryAccessor& mem, std::uintptr_t bucketPtr, const GomOffsets& off, std::uint64_t& outKey)
+inline bool GetBucketKey(const IMemoryAccessor& mem, std::uintptr_t bucketPtr, const GomOffsets& off, std::uint32_t& outKey)
 {
     outKey = 0;
     if (!bucketPtr)
@@ -65,13 +65,13 @@ inline bool IsBucketHashmaskKeyConsistent(const IMemoryAccessor& mem, std::uintp
         return false;
     }
 
-    std::uint64_t key = 0;
+    std::uint32_t key = 0;
     if (!GetBucketKey(mem, bucketPtr, off, key))
     {
         return false;
     }
 
-    const std::uint32_t key32 = static_cast<std::uint32_t>(key);
+    const std::uint32_t key32 = key;
     const std::uint32_t expected = CalHashmaskThrougTag(static_cast<std::int32_t>(key32));
     return mask == expected;
 }
@@ -147,13 +147,13 @@ inline std::uintptr_t FindBucketThroughHashmask(const IMemoryAccessor& mem, std:
             continue;
         }
 
-        std::uint64_t key = 0;
+        std::uint32_t key = 0;
         if (!GetBucketKey(mem, bucketPtr, off, key))
         {
             continue;
         }
 
-        const std::uint32_t key32 = static_cast<std::uint32_t>(key);
+        const std::uint32_t key32 = key;
         const std::uint32_t expected = CalHashmaskThrougTag(static_cast<std::int32_t>(key32));
         if (expected != mask)
         {
@@ -185,8 +185,8 @@ inline std::uintptr_t FindBucketThroughTag(const IMemoryAccessor& mem, std::uint
     {
         const std::uintptr_t bucketPtr = bucketsBase + static_cast<std::uintptr_t>(bi) * static_cast<std::uintptr_t>(off.bucket.stride);
 
-        std::uint64_t key = 0;
-        if (!GetBucketKey(mem, bucketPtr, off, key) || static_cast<std::uint32_t>(key) != expectedKey)
+        std::uint32_t key = 0;
+        if (!GetBucketKey(mem, bucketPtr, off, key) || key != expectedKey)
         {
             continue;
         }
