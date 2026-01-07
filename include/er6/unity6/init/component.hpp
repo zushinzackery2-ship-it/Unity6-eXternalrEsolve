@@ -117,4 +117,27 @@ inline std::uintptr_t GetComponentByTypeName(std::uintptr_t gameObjectNative, co
     return GetComponentThroughTypeName(gameObjectNative, typeName);
 }
 
+inline std::vector<std::uintptr_t> GetAllComponents(std::uintptr_t gameObjectNative)
+{
+    std::vector<std::uintptr_t> result;
+    if (!IsInited() || !gameObjectNative) return result;
+
+    std::uintptr_t pool = 0;
+    if (!er6::GetComponentPool(Mem(), gameObjectNative, g_ctx.gomOff, pool) || !pool) return result;
+
+    std::int32_t count = 0;
+    if (!er6::GetComponentCount(Mem(), gameObjectNative, g_ctx.gomOff, count) || count <= 0) return result;
+    if (count > 128) count = 128;
+
+    result.reserve(count);
+    for (std::int32_t i = 0; i < count; ++i)
+    {
+        std::uintptr_t nativeComp = 0;
+        if (!er6::GetComponentSlotNative(Mem(), pool, g_ctx.gomOff, i, nativeComp) || !nativeComp) continue;
+        result.push_back(nativeComp);
+    }
+
+    return result;
+}
+
 } // namespace er6

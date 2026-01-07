@@ -81,10 +81,22 @@
 | **上下文** | `Pid()` | 返回目标进程 PID |
 |  | `IsInited()` | 是否已初始化 |
 |  | `ResetContext()` | 重置上下文，释放句柄 |
+|  | `UnityPlayerBase()` | 返回 UnityPlayer.dll 基址 |
+|  | `GomGlobalSlotVa()` | 返回 GOM 全局槽虚拟地址 |
+|  | `MsIdSetPtr()` | 返回 MSID Set 指针 |
+|  | `Mem()` | 返回内存访问器 `WinApiMemoryAccessor` |
+|  | `Off()` | 返回核心偏移量结构 `Offsets` |
+|  | `GomOff()` | 返回 GOM 偏移量结构 `GomOffsets` |
+|  | `CamOff()` | 返回相机偏移量结构 `CameraOffsets` |
+|  | `TransformOff()` | 返回 Transform 偏移量结构 `TransformOffsets` |
+|  | `ReadPtr(addr)` | 读取指针，返回 `optional<uintptr_t>` |
+|  | `ReadValue<T>(addr)` | 读取任意类型值，返回 `optional<T>` |
 | **GameObject** | `EnumerateGameObjects()` | 枚举所有 GameObject，返回 `optional<vector<GameObjectEntry>>` |
-|  | `FindGameObjectThroughTag(tag)` | 按 Tag 查找 GameObject |
+|  | `FindGameObjectThroughTag(tag)` | 按 Tag 查找第一个 GameObject，返回 `uintptr_t` |
+|  | `FindGameObjectThroughName(name)` | 按名称查找所有同名 GameObject，返回 `vector<uintptr_t>` |
 |  | `GetGameObjectName(nativeGo)` | 获取 GameObject 名称 |
-| **组件** | `GetTransformComponent(go)` | 获取 Transform 组件 |
+| **组件** | `GetAllComponents(go)` | 获取 GameObject 的所有组件，返回 `vector<uintptr_t>` |
+|  | `GetTransformComponent(go)` | 获取 Transform 组件 |
 |  | `GetCameraComponent(go)` | 获取 Camera 组件 |
 |  | `GetComponentThroughTypeId(go, typeId)` | 按 TypeId 获取组件 |
 |  | `GetComponentThroughTypeName(go, name)` | 按类型名获取组件 |
@@ -93,7 +105,7 @@
 | **相机 / W2S** | `FindMainCamera()` | 查找主相机 |
 |  | `GetCameraMatrix(cam)` | 获取相机 ViewProj 矩阵 |
 |  | `WorldToScreenPoint(viewProj, screen, pos)` | 世界坐标转屏幕坐标 |
-| **MSID** | `FindObjectsOfTypeAll(className)` | 按类名查找所有实例 |
+| **MSID** | `FindObjectsOfTypeAll(className)` | 按类名查找所有实例，返回 `optional<vector<FindObjectsOfTypeAllResult>>` |
 |  | `FindObjectsOfTypeAll(ns, className)` | 按命名空间+类名查找 |
 |  | `EnumerateMsIdToPointerObjects(opt)` | 枚举 MSID 注册表 |
 | **Metadata** | `ExportGameAssemblyMetadataByScore()` | 导出 metadata 字节 |
@@ -110,7 +122,7 @@
 - **编译器**：MSVC（Visual Studio 2022）
 - **平台**：Windows x64
 - **链接方式**：静态运行时（/MT）
-- **第三方库**：仓库已包含 `glm/`（工具侧编译 bat 已默认添加 include）
+- **第三方库**：需要 [GLM](https://github.com/g-truc/glm)（用于矩阵运算），请自行下载并配置 include 路径
 
 ---
 
