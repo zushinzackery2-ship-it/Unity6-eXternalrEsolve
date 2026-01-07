@@ -84,16 +84,17 @@ inline std::uintptr_t FindGameObjectThroughTag(
     return 0;
 }
 
-inline std::uintptr_t FindGameObjectThroughName(
+inline std::vector<std::uintptr_t> FindGameObjectThroughName(
     const IMemoryAccessor& mem,
     std::uintptr_t gomGlobalSlot,
     const GomOffsets& off,
     const std::string& name)
 {
+    std::vector<std::uintptr_t> result;
     std::vector<GameObjectEntry> gameObjects;
     if (!EnumerateGameObjects(mem, gomGlobalSlot, off, gameObjects))
     {
-        return 0;
+        return result;
     }
 
     for (const auto& go : gameObjects)
@@ -111,11 +112,11 @@ inline std::uintptr_t FindGameObjectThroughName(
 
         if (goName == name)
         {
-            return go.nativeObject;
+            result.push_back(go.nativeObject);
         }
     }
 
-    return 0;
+    return result;
 }
 
 inline std::vector<std::uintptr_t> FindGameObjectsThroughNameContainsAll(
